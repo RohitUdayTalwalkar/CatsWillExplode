@@ -37,12 +37,12 @@
         game.add.sprite(0, 0, "background");
         createFishes(10);
         createCats(10);
-        emitter = game.add.emitter(0, 0, 200);
+        emitter = game.add.emitter(0, 0, 300);
         emitter.makeParticles("particle");
         emitter.gravity = 0;
         emitter.setAlpha(1, 0, 2000);
-        emitter.minParticleScale = 0.4;
-        emitter.maxParticleScale = 0.6;
+        emitter.minParticleScale = 0.8;
+        emitter.maxParticleScale = 1.2;
     }
 
     function createFishes(maxFishes) {
@@ -92,6 +92,13 @@
     function addFish() {
         var fish = fishes.create(Math.random() * 640, Math.random() * 480, "fish");
         fish.scale.set(2);
+        if (Math.random() > 0.5) {
+            fish.body.velocity.x = 100;
+        } else {
+            fish.body.velocity.x = -100;
+        }
+        fish.body.bounce.set(1);
+        fish.body.collideWorldBounds = true;
     }
 
     function addCat() {
