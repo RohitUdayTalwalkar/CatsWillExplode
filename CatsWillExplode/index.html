@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>TypeScript HTML App</title>
+    <link rel="stylesheet" href="app.css" type="text/css" />
+    <script src="app.js"></script>
+    <script src="phaser.min.js"></script>
+</head>
+<body>
+    <div id="content"></div>
+
+</body>
+</html>
+<script>
+
+    var cats;
+    var fishes;
+    var emitter;
+
+    var game = new Phaser.Game(640, 480, Phaser.AUTO, "content", {
+        preload: preload,
+        create: create,
+        update: update
+    });
+
+    function preload() {
+        game.load.crossOrigin = true;
+        game.load.image("background", "background.png");
+        game.load.image("fish", "fish.png");
+        game.load.image("cat", "cat.png");
+        game.load.image("particle", "particle.png");
+    }
+
+    function create() {
+        game.add.sprite(0, 0, "background");
+        createFishes(10);
+        createCats(10);
+        emitter = game.add.emitter(0, 0, 200);
+        emitter.makeParticles("particle");
+        emitter.gravity = 0;
+        emitter.setAlpha(1, 0, 2000);
+        emitter.minParticleScale = 0.4;
+        emitter.maxParticleScale = 0.6;
+    }
+
+    function createFishes(maxFishes) {
+        fishes = game.add.group();
+        fishes.enableBody = true;
+        fishes.physicsBodyType = Phaser.Physics.ARCADE;
+
+        for (var i = 0; i < maxFishes; i++) {
+            addFish();
+        }
+    }
+    function createCats(maxCats) {
+        cats = game.add.group();
+        cats.enableBody = true;
+        cats.physicsBodyType = Phaser.Physics.ARCADE;
+
+        for (var i = 0; i < maxCats; i++) {
+            addCat();
+        }
+    }
+
+    function eatFish (cat, fish) {
+        fish.kill();
+        addFish();
+
+        cat.deltaX *= 0.8;
+        cat.deltaY *= 0.8;
+
+        cat.scale.x += 0.2;
+        cat.scale.y += 0.2;
+        if (cat.scale.x > 1.5) {
+            particleBurst(cat.body.center.x, cat.body.center.y);
+            cat.kill();
+        }
+    }
+
+    function particleBurst(x,y) {
+        emitter.x = x;
+        emitter.y = y;
+        emitter.start(true, 2000, null, 40);
+    }
+
+    function update() { 
+        game.physics.arcade.overlap(cats, fishes, eatFish, null, this);
+    }
+
+    function addFish() {
+        var fish = fishes.create(Math.random() * 640, Math.random() * 480, "fish");
+        fish.scale.set(2);
+    }
+
+    function addCat() {
+        var cat = cats.create(Math.random() * 640, Math.random() * 480, "cat");
+        cat.scale.set(0.5);
+        cat.body.velocity.set(100);
+
+        if (Math.random() > 0.5) cat.body.velocity.x * -1;
+        if (Math.random() > 0.5) cat.body.velocity.y * -1;
+
+        cat.body.collideWorldBounds = true;
+        cat.body.bounce.set(1);
+    }
+
+</script>
