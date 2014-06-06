@@ -76,6 +76,7 @@
         fish.kill();
         addFish();
 
+        updateTargetFishForCat(cat);
         cat.deltaX *= 0.8;
         cat.deltaY *= 0.8;
 
@@ -97,14 +98,39 @@
         game.physics.ninja.collide(cats, fishes, eatFish, null, this);
 
         fishes.forEach(function (fish) {
-            fish.body.moveRight((Math.random() - 0.5) * 40);
-            fish.body.moveUp((Math.random() - 0.5) * 40);
+            fish.body.moveRight((Math.random() - 0.5) * 20);
+            fish.body.moveUp((Math.random() - 0.5) * 20);
         });
 
         cats.forEach(function (cat) {
-            cat.body.moveRight((Math.random() - 0.5) * 40);
-            cat.body.moveUp((Math.random() - 0.5) * 40);
+            updateTargetFishForCat(cat);
+            moveCatTowardsFishAtSpeed(cat, 1);
         });
+    }
+
+    function updateTargetFishForCat(cat) {
+        if (typeof cat.fishTarget != "undefined" &&
+            cat.fishTarget.alive != false) return;
+
+        var fishTarget = Math.floor(Math.random() * 1);
+        fishes.forEach(function (fish) {
+            if (fish.alive) {
+                cat.targetFish = fish;
+            }
+        });
+    }
+
+    function moveCatTowardsFishAtSpeed(cat, speed) {
+        if (cat.targetFish == "none" || 
+            typeof cat.targetFish == "undefined") return;
+
+        var angle = Math.atan2(
+            cat.body.aabb.pos.y - cat.targetFish.body.aabb.pos.y,
+            cat.body.aabb.pos.x - cat.targetFish.body.aabb.pos.x);
+
+        cat.body.moveLeft(Math.cos(angle) * speed);
+        cat.body.moveUp(Math.sin(angle) * speed);
+        
     }
 
     function addFish() {
@@ -124,10 +150,7 @@
         cat.scale.set(0.5);
         cat.body.aabb.velocity.x = 100;
         cat.body.velocity.set(100);
-
-
-        //if (Math.random() > 0.5) cat.body.velocity.x * -1;
-        //if (Math.random() > 0.5) cat.body.velocity.y * -1;
+        cat["targetFish"] = "none";
     }
 
 </script>
