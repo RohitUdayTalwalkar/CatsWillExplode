@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>TypeScript HTML App</title>
+    <title>Cats Will Explode</title>
     <link rel="stylesheet" href="app.css" type="text/css" />
     <script src="app.js"></script>
     <script src="phaser.min.js"></script>
@@ -17,14 +17,16 @@
 
     var cats;
     var fishes;
-    var emitter;
+    var deadCatParticles;
+    var deadFishParticles;
+    var catsLeftAlive = "zero";
 
     var MainMenu = function (game) { };
     MainMenu.prototype = {
         create: function () {
             var text = "Cats Will Explode";
             var style = { font: "65px Arial", fill: "#ff0044", align: "center" };
-            game.add.text(game.world.centerX - 300, 0, text, style);
+            game.add.text(game.world.centerX - 300, game.world.centerY-65, text, style);
             game.input.onDown.add(function () { game.state.start("GameState"); }, this);
         }
     }
@@ -43,15 +45,24 @@
         create: function () {
             var text = "All Cats Explode";
             var style = { font: "65px Arial", fill: "#ff0044", align: "center" };
-            game.add.text(game.world.centerX - 300, 0, text, style);
+            game.add.text(game.world.centerX - 300, game.world.centerY - 65, text, style);
             game.input.onDown.add(function () { game.state.start("MainMenu"); }, this);
         }
     }
 
-
+    var WinScreen = function (game) { };
+    WinScreen.prototype = {
+        create: function () {
+            var text = catsLeftAlive + " Cats\n Escape Explode";
+            var style = { font: "65px Arial", fill: "#ff0044", align: "center" };
+            game.add.text(game.world.centerX - 300, game.world.centerY - 65, text, style);
+            game.input.onDown.add(function () { game.state.start("MainMenu"); }, this);
+        }
+    }
     game.state.add("GameState", GameState);
     game.state.add("GameOver", GameOver);
     game.state.add("MainMenu", MainMenu);
+    game.state.add("WinScreen", WinScreen);
 
     function preload() {
         game.load.crossOrigin = true;
@@ -67,18 +78,31 @@
         game.physics.ninja.bounce = 0;
 
         game.add.sprite(0, 0, "background");
-        createFishes(2);
-        createCats(2);
-        setupParticleEmitter();
+        createFishes(6);
+        createCats(9);
+        setupParticleDeadCatParticles();
+        setupKillFishParticles();
     }
 
-    function setupParticleEmitter() {
-        emitter = game.add.emitter(0, 0, 300);
-        emitter.makeParticles("particle");
-        emitter.gravity = 0;
-        emitter.setAlpha(1, 0, 2000);
-        emitter.minParticleScale = 0.8;
-        emitter.maxParticleScale = 1.2;
+
+    function setupKillFishParticles() {
+        deadFishParticles = game.add.emitter(0, 0, 300);
+        deadFishParticles.makeParticles("particle");
+        deadFishParticles.gravity = 0;
+        deadFishParticles.setAlpha(1, 0, 2000);
+        deadFishParticles.minParticleScale = 0.8;
+        deadFishParticles.maxParticleScale = 1.2;
+    }
+
+    function setupParticleDeadCatParticles() {
+        deadCatParticles = game.add.emitter(0, 0, 300);
+        deadCatParticles.makeParticles("cat");
+        deadCatParticles.gravity = 0;
+        deadCatParticles.setAlpha(1, 0, 2000);
+        deadCatParticles.minParticleScale = 0.4;
+        deadCatParticles.maxParticleScale = 0.6;
+        deadCatParticles.setXSpeed(-200, 200);
+        deadCatParticles.setYSpeed(-200, 200);
     }
 
     function createFishes(maxFishes) {
@@ -111,23 +135,27 @@
         cat.scale.x += 0.2;
         cat.scale.y += 0.2;
         if (cat.scale.x > 1.5) {
-            particleBurst(cat.body.aabb.pos.x, cat.body.aabb.pos.y);
+            particleBurst(cat.body.aabb.pos.x, cat.body.aabb.pos.y, 40, deadCatParticles);
             cat.kill();
         }
     }
 
-    function particleBurst(x,y) {
-        emitter.x = x;
-        emitter.y = y;
-        emitter.start(true, 2000, null, 40);
+    function particleBurst(x,y,numberOfParticles, particles) {
+        particles.x = x;
+        particles.y = y;
+        particles.start(true, 2000, null, numberOfParticles);
     }
 
     function update() { 
         game.physics.ninja.collide(cats, fishes, eatFish, null, this);
 
+        var aliveFishes = 0;
         fishes.forEach(function (fish) {
-            fish.body.moveRight((Math.random() - 0.5) * 20);
-            fish.body.moveUp((Math.random() - 0.5) * 20);
+            if (fish.alive) {
+                fish.body.moveRight((Math.random() - 0.5) * 20);
+                fish.body.moveUp((Math.random() - 0.5) * 20);
+                aliveFishes++;
+            }
         });
 
         var aliveCats = 0;
@@ -138,9 +166,16 @@
                 aliveCats++;
             }
         });
+        if (aliveFishes == 0) {
+            catsLeftAlive = numberToText(aliveCats);
+            game.state.start("WinScreen");
+        }
         if (aliveCats == 0) { game.state.start("GameOver"); }
     }
-
+    function numberToText(number) {
+        var numbers = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+        return numbers[number];
+    }
     function updateTargetFishForCat(cat) {
         if (typeof cat.fishTarget != "undefined" &&
             cat.fishTarget.alive != false) return;
@@ -175,8 +210,14 @@
         } else {
             fish.body.velocity.x = -100;
         }
+        fish.inputEnabled = true;
+        fish.events.onInputDown.add(clickFish, this);
     }
-
+    function clickFish(fish) {
+        particleBurst(fish.body.aabb.pos.x, fish.body.aabb.pos.y, 40, deadFishParticles);
+        fish.kill();
+        if (Math.random() > 0.4) { addFish(); }
+    }
     function addCat() {
         var cat = cats.create(Math.random() * 640, Math.random() * 480, "cat");
         game.physics.ninja.enableTile(cat, cat.frame);

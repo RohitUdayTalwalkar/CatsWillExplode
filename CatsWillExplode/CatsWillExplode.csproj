@@ -23,12 +23,17 @@
     <Content Include="fish.png" />
     <Content Include="index.html" />
     <Content Include="particle.bmp" />
+    <Content Include="particle.png" />
+    <Content Include="phaser.min.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="web.config" />
   </ItemGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Maw!Soft.pubxml" />
     <None Include="web.Debug.config">
       <DependentUpon>web.config</DependentUpon>
     </None>
