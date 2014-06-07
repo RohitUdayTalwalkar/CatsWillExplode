@@ -19,11 +19,39 @@
     var fishes;
     var emitter;
 
-    var game = new Phaser.Game(640, 480, Phaser.AUTO, "content", {
+    var MainMenu = function (game) { };
+    MainMenu.prototype = {
+        create: function () {
+            var text = "Cats Will Explode";
+            var style = { font: "65px Arial", fill: "#ff0044", align: "center" };
+            game.add.text(game.world.centerX - 300, 0, text, style);
+            game.input.onDown.add(function () { game.state.start("GameState"); }, this);
+        }
+    }
+
+    var game = new Phaser.Game(640, 480, Phaser.AUTO, "content", MainMenu);
+
+    var GameState = function (game) { };
+    GameState.prototype = {
         preload: preload,
         create: create,
         update: update
-    });
+    }
+
+    var GameOver = function (game) { };
+    GameOver.prototype = {
+        create: function () {
+            var text = "All Cats Explode";
+            var style = { font: "65px Arial", fill: "#ff0044", align: "center" };
+            game.add.text(game.world.centerX - 300, 0, text, style);
+            game.input.onDown.add(function () { game.state.start("MainMenu"); }, this);
+        }
+    }
+
+
+    game.state.add("GameState", GameState);
+    game.state.add("GameOver", GameOver);
+    game.state.add("MainMenu", MainMenu);
 
     function preload() {
         game.load.crossOrigin = true;
@@ -39,8 +67,8 @@
         game.physics.ninja.bounce = 0;
 
         game.add.sprite(0, 0, "background");
-        createFishes(10);
-        createCats(10);
+        createFishes(2);
+        createCats(2);
         setupParticleEmitter();
     }
 
@@ -102,10 +130,15 @@
             fish.body.moveUp((Math.random() - 0.5) * 20);
         });
 
+        var aliveCats = 0;
         cats.forEach(function (cat) {
-            updateTargetFishForCat(cat);
-            moveCatTowardsFishAtSpeed(cat, 1);
+            if (cat.alive) {
+                updateTargetFishForCat(cat);
+                moveCatTowardsFishAtSpeed(cat, 1);
+                aliveCats++;
+            }
         });
+        if (aliveCats == 0) { game.state.start("GameOver"); }
     }
 
     function updateTargetFishForCat(cat) {
